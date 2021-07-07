@@ -52,15 +52,15 @@ RUN git clone https://github.com/FEniCS/fiat.git; \
     git clone https://bitbucket.org/fenics-project/ffc; \
     git clone https://bitbucket.org/fenics-project/dolfin; \
     git clone https://bitbucket.org/fenics-project/mshr; \
-    cd fiat    && pip3 install . && cd ..; \
-    cd dijitso && pip3 install . && cd ..; \
-    cd ufl     && pip3 install . && cd ..; \
-    cd ffc     && pip3 install . && cd ..;
+    cd fiat    && pip3 -v install --no-deps --no-cache-dir . && cd ..;\
+    cd dijitso && pip3 -v install --no-deps --no-cache-dir . && cd ..;\
+    cd ufl     && pip3 -v install --no-deps --no-cache-dir . && cd ..;\
+    cd ffc     && pip3 -v install --no-deps --no-cache-dir . && cd ..
 
 RUN mkdir dolfin/build && cd dolfin/build && cmake .. && make install && cd ../..; 
 RUN mkdir mshr/build   && cd mshr/build   && cmake .. && make install && cd ../..; 
-RUN cd dolfin/python && pip3 install . && cd ../..; 
-RUN cd mshr/python   && pip3 install . && cd ../..
+RUN cd dolfin/python && pip3 -v install --no-deps --no-cache-dir . && cd ../..; 
+RUN cd mshr/python   && pip3 -v install --no-deps --no-cache-dir . && cd ../..
 
 # replace log.py from ufl to be able to use pvpython, because vtkPythonStdStreamCaptureHelper has no attribute isatty
 COPY log.py /usr/local/lib/python3.6/dist-packages/ufl/log.py
@@ -74,28 +74,28 @@ RUN cd libdrm-2.4.104; mkdir build; cd build; meson ..; ninja; ninja install;
 
 RUN wget mesa.freedesktop.org/archive/mesa-20.3.4.tar.xz && tar xvf mesa-20.3.4.tar.xz && rm mesa-20.3.4.tar.xz
 WORKDIR /usr/local/mesa-20.3.4
-RUN mkdir build; meson build/; meson configure build/ -Dosmesa=gallium -Dgallium-drivers=swrast,swr -Dglx=disabled -Degl=disabled; ninja -C build/; ninja -C build/ install;
-# RUN autoreconf -fi
-# RUN ./configure \
-#     --enable-osmesa\
-#     --disable-glx \
-#     --disable-driglx-direct\ 
-#     --disable-dri\ 
-#     --disable-egl \
-#     --with-gallium-drivers=swrast 
-
-# RUN make -j 8; make install;
+RUN mkdir build; \
+    meson build/ \
+    -Dosmesa=gallium \
+    -Dgallium-drivers=swrast,swr \ 
+    -Dglx=disabled \
+    -Degl=disabled \
+    -Dllvm=true; \
+    ninja -C build/; \ 
+    ninja -v -C build/ install;
 
 
 # build glu
 ENV C_INCLUDE_PATH '/usr/local/mesa-20.3.4/include'
 ENV CPLUS_INCLUDE_PATH '/usr/local/mesa-20.3.4/include'
+ENV LDFLAGS '-L/usr/local/mesa-20.3.4/build/src/gallium/targets/osmesa'
+ENV CPPFLAGS '-I/usr/local/mesa-20.3.4/include'
 WORKDIR /usr/local
 RUN git clone http://anongit.freedesktop.org/git/mesa/glu.git
 
 WORKDIR /usr/local/glu
-RUN ./autogen.sh --enable-osmesa
-RUN ./configure --enable-osmesa
+RUN ./autogen.sh --enable-osmesa 
+RUN ./configure --enable-osmesa 
 RUN make -j 8
 RUN make install
 WORKDIR /home/docker
